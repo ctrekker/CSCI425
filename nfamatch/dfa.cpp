@@ -87,6 +87,8 @@ void DFA::mergeStates() {
                 continue;
             }
             optimized.erase(state);
+            if (this->states[state].accepting) this->states[keepState].accepting = true;
+            if (this->states[state].start) this->states[keepState].start = true;
             this->states.erase(state);
             mergeIdMap[state] = keepState;
         }
@@ -168,9 +170,31 @@ void DFA::normalize() {
         i++;
     }
 
+    // swap positions of 0 and starting state to match convention
+    int startingId;
+    for (auto s : this->states) {
+        if (s.second.start) {
+            startingId = s.first;
+            break;
+        }
+    }
+    if (startingId != 0) {
+        int zeroMapped = idMap[0];
+        idMap[0] = startingId;
+        idMap[startingId] = zeroMapped;
+    }
+
     for (auto tableRow : this->table) {
         for (auto tableCell : tableRow.second) {
-            normalized[idMap[tableRow.first]][tableCell.first] = idMap[tableCell.second];
+            int mappedNodeId;
+            // if the table no longer has the node in question, set the mappedNodeId to NC
+            if (idMap.find(tableCell.second) == idMap.end()) {
+                mappedNodeId = -1;
+            }
+            else {
+                mappedNodeId = idMap[tableCell.second];
+            }
+            normalized[idMap[tableRow.first]][tableCell.first] = mappedNodeId;
         }
     }
 
@@ -258,13 +282,20 @@ std::string DFA::formatTableForAssignmentOutput() {
 
 
 std::ostream& operator<<(std::ostream& os, const DFA& dfa) {
-    os << "\t";
+    os << "SA\t";
     for (char c : dfa.alphabet) {
         os << c << "\t";
     }
     os << std::endl;
 
-    os << dfa.table;
+    for (std::pair<int, std::map<char, int>> tableRow : dfa.table) {
+        StateInfo info = dfa.states.at(tableRow.first);
+        std::cout << (info.start ? '+' : '-') << (info.accepting ? '+' : '-') << " " << tableRow.first << " |\t";
+        for (auto tableCell : tableRow.second) {
+            std::cout << tableCell.second << "\t";
+        }
+        std::cout << std::endl;
+    }
 
     return os;
 }
