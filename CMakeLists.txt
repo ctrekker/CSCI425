@@ -5,5 +5,5 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-file(GLOB nfamatch_sources nfamatch/**.cpp)
-add_executable(NFAMATCH nfamatch/main.cpp ${nfamatch_sources})
+file(GLOB nfamatch_sources match/**.cpp)
+add_executable(NFAMATCH match/main.cpp ${nfamatch_sources})
