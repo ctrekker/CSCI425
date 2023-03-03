@@ -25,10 +25,8 @@ CFG CFG::parse(std::istream &ss) {
 
     std::string previousToken;
 
-    while (!ss.eof()) {
-        ss >> token;
+    while (ss >> token) {
         tokens.push_back(token);
-
 
         if (token == "->") {
             nonterminals.insert(previousToken);
@@ -69,6 +67,7 @@ CFG CFG::parse(std::istream &ss) {
     int currentNonterminal = -1;
     int goalSymbol = -1;
     GrammarRule currentRule;
+    std::cout << tokens << std::endl;
     for (std::string token : tokens) {
         if (token == "->" || token == "|") {
             if (token == "->") currentRule.pop_back();
@@ -80,6 +79,7 @@ CFG CFG::parse(std::istream &ss) {
             if (token == "->") currentNonterminal = symbolMap[previousToken];
         }
         else {
+            std::cout << token << ", " << currentRule << std::endl;
             currentRule.push_back(symbolMap[token]);
             if (token == "$") goalSymbol = currentNonterminal;
         }
