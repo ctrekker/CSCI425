@@ -8,8 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 file(GLOB common_sources common/**.cpp)
 add_library(COMMON ${common_sources})
 
-file(GLOB nfamatch_sources nfamatch/**.cpp)
-add_executable(NFAMATCH nfamatch/main.cpp ${nfamatch_sources})
+file(GLOB nfamatch_sources match/**.cpp)
+add_executable(NFAMATCH match/main.cpp ${nfamatch_sources})
 target_link_libraries(NFAMATCH COMMON)
 target_include_directories(NFAMATCH PRIVATE .)
 
