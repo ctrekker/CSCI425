@@ -5,5 +5,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+file(GLOB common_sources common/**.cpp)
+add_library(COMMON ${common_sources})
+
 file(GLOB nfamatch_sources nfamatch/**.cpp)
 add_executable(NFAMATCH nfamatch/main.cpp ${nfamatch_sources})
+target_link_libraries(NFAMATCH COMMON)
+target_include_directories(NFAMATCH PRIVATE .)
+
+file(GLOB cfg_sources cfg/**.cpp)
+add_executable(CFG cfg/main.cpp ${cfg_sources})
+target_link_libraries(CFG COMMON)
+target_include_directories(CFG PRIVATE .)
