@@ -19,14 +19,18 @@ class CFG {
     std::map<int, std::string> reverseSymbolMap;
     std::map<int, std::vector<GrammarRule>> rules;
 
-    inline bool isTerminal(int sym);
-
     public:
     static CFG parse(std::istream &is);
+    bool isTerminal(std::string symStr);
+    inline bool isTerminal(int sym);
+    std::vector<std::string> getSymbols();
+
+    std::vector<std::string> toStrSyms(std::set<int> arr);
 
     bool derivesToLambda(int nonterminal);
     bool derivesToLambda(std::string nonterminalName);
     bool derivesToLambda(int nonterminal, std::set<GrammarRule> &visited);
+    bool derivesToLambda(GrammarRule rule);
 
     std::set<int> firstSet(std::string sym);
     std::set<int> firstSet(std::vector<int> str);
@@ -35,6 +39,10 @@ class CFG {
     std::set<int> followSet(std::string sym);
     std::set<int> followSet(int x);
     std::set<int> followSet(int x, std::set<int> visited);
+
+    std::set<int> predictSet(int sym, GrammarRule rule);
+
+    std::map<int, std::map<int, int>> stateTableLL1();
 
     std::string formatForLGA();
 };

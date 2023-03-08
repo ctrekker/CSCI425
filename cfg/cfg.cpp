@@ -114,8 +114,27 @@ CFG CFG::parse(std::istream &ss) {
     return cfg;
 }
 
+bool CFG::isTerminal(std::string symStr) {
+    return isTerminal(symbolMap[symStr]);
+}
 inline bool CFG::isTerminal(int sym) {
     return sym > terminalThreshold && sym != lambdaSymbol;
+}
+
+std::vector<std::string> CFG::toStrSyms(std::set<int> arr) {
+    std::vector<std::string> out;
+    for (int i : arr) {
+        out.push_back(reverseSymbolMap[i]);
+    }
+    return out;
+}
+
+std::vector<std::string> CFG::getSymbols() {
+    std::vector<std::string> out;
+    for (std::pair<std::string, int> p : symbolMap) {
+        out.push_back(p.first);
+    }
+    return out;
 }
 
 
@@ -163,6 +182,13 @@ bool CFG::derivesToLambda(int nonterminal, std::set<GrammarRule> &visited) {
     }
     return false;
 }
+bool CFG::derivesToLambda(GrammarRule rule) {
+    for (int sym : rule) {
+        if (sym == lambdaSymbol) continue;
+        if (isTerminal(sym) || !derivesToLambda(sym)) return false;
+    }
+    return true;
+}
 
 std::set<int> CFG::firstSet(std::string sym) {
     std::vector<int> str;
@@ -190,7 +216,7 @@ std::set<int> CFG::firstSet(std::vector<int> str, std::set<int> visited) {
     }
     if (derivesToLambda(x) && str.size() > 1) {
         str.erase(str.begin());
-        std::set<int> subFirst = firstSet(str);
+        std::set<int> subFirst = firstSet(str, visited);
         unionMutating(first, subFirst);
     }
     return first;
@@ -247,6 +273,38 @@ std::set<int> CFG::followSet(const int x, std::set<int> visited) {
     }
 
     return follow;
+}
+
+std::set<int> CFG::predictSet(int sym, GrammarRule rule) {
+    std::set<int> predict = firstSet(rule);
+    if (derivesToLambda(rule)) {
+        std::set<int> follow = followSet(sym);
+        unionMutating(predict, follow);
+    }
+    return predict;
+}
+
+std::map<int, std::map<int, int>> CFG::stateTableLL1() {
+    // maps NONTERM -> (TERM -> GLOBALRULE)
+    std::map<int, std::map<int, int>> table;
+    int globalRuleNum = 0;
+    for (int i = 0; i <= terminalThreshold; i++) {
+        std::map<int, int> tableRow;
+        for (int ruleNum=0; ruleNum<rules[i].size(); ruleNum++) {
+            std::set<int> predict = predictSet(i, rules[i][ruleNum]);
+            for (int psym : predict) {
+                if (tableRow.find(psym) != tableRow.end()) {
+                    std::cerr << "ERROR: CFG not compatible with LL(1) parse table" << std::endl;
+                    std::cout << i << ": " << tableRow << " , " << predict << std::endl;
+                    throw 1;
+                }
+                tableRow[psym] = globalRuleNum;
+            }
+            globalRuleNum++;
+        }
+        table[i] = tableRow;
+    }
+    return table;
 }
 
 std::string CFG::formatForLGA() {

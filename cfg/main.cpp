@@ -20,6 +20,18 @@ int main(int argc, char** argv) {
     CFG cfg = CFG::parse(cfgStream);
 
     std::cout << cfg.formatForLGA() << std::endl;
+    // for (std::string sym : cfg.getSymbols()) {
+    //     if(!cfg.isTerminal(sym)) {
+    //         std::cout << sym << ":" << std::endl;
+    //         std::cout << "FIRST: " << cfg.toStrSyms(cfg.firstSet(sym)) << std::endl;
+    //         std::cout << "FOLLOW: " << cfg.toStrSyms(cfg.followSet(sym)) << std::endl << std::endl;
+    //     }
+    // }
+    // for (int nonterm : cfg.getNonterminals()) {
+
+    // }
+    std::cout << cfg.stateTableLL1() << std::endl;
+    // cfg._testFunction();
 
     return 0;
 }
