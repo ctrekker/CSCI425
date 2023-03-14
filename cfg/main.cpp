@@ -27,11 +27,12 @@ int main(int argc, char** argv) {
     //         std::cout << "FOLLOW: " << cfg.toStrSyms(cfg.followSet(sym)) << std::endl << std::endl;
     //     }
     // }
-    // for (int nonterm : cfg.getNonterminals()) {
-
-    // }
     std::cout << cfg.stateTableLL1() << std::endl;
-    // cfg._testFunction();
+    // std::cout << cfg.followSet("E") << std::endl;
+    // std::cout << cfg.derivesToLambda("C") << std::endl;
+    // std::cout << cfg.derivesToLambda("K") << std::endl;
+    // std::cout << cfg.printAllPredictSets() << std::endl;
+    std::cout << "MATCH: " << cfg.match("oparen plus two oparen mult three two two cparen cparen") << std::endl;
 
     return 0;
 }

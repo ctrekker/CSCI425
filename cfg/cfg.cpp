@@ -67,7 +67,6 @@ CFG CFG::parse(std::istream &ss) {
     int currentNonterminal = -1;
     int goalSymbol = -1;
     GrammarRule currentRule;
-    std::cout << tokens << std::endl;
     for (std::string token : tokens) {
         if (token == "->" || token == "|") {
             if (token == "->") currentRule.pop_back();
@@ -79,7 +78,6 @@ CFG CFG::parse(std::istream &ss) {
             if (token == "->") currentNonterminal = symbolMap[previousToken];
         }
         else {
-            std::cout << token << ", " << currentRule << std::endl;
             currentRule.push_back(symbolMap[token]);
             if (token == "$") goalSymbol = currentNonterminal;
         }
@@ -93,9 +91,7 @@ CFG CFG::parse(std::istream &ss) {
         reverseSymbolMap[sid] = "lambda";
         sid++;
     }
-    else {
-        lambdaSymbol = symbolMap["lambda"];
-    }
+    lambdaSymbol = symbolMap["lambda"];
     if (symbolMap.find("$") == symbolMap.end()) {
         throw "ERROR: CFG must include $ symbol in goal nonterminal";
     }
@@ -122,6 +118,13 @@ inline bool CFG::isTerminal(int sym) {
 }
 
 std::vector<std::string> CFG::toStrSyms(std::set<int> arr) {
+    std::vector<std::string> out;
+    for (int i : arr) {
+        out.push_back(reverseSymbolMap[i]);
+    }
+    return out;
+}
+std::vector<std::string> CFG::toStrSyms(std::vector<int> arr) {
     std::vector<std::string> out;
     for (int i : arr) {
         out.push_back(reverseSymbolMap[i]);
@@ -287,7 +290,6 @@ std::set<int> CFG::predictSet(int sym, GrammarRule rule) {
 std::map<int, std::map<int, int>> CFG::stateTableLL1() {
     // maps NONTERM -> (TERM -> GLOBALRULE)
     std::map<int, std::map<int, int>> table;
-    int globalRuleNum = 0;
     for (int i = 0; i <= terminalThreshold; i++) {
         std::map<int, int> tableRow;
         for (int ruleNum=0; ruleNum<rules[i].size(); ruleNum++) {
@@ -298,13 +300,78 @@ std::map<int, std::map<int, int>> CFG::stateTableLL1() {
                     std::cout << i << ": " << tableRow << " , " << predict << std::endl;
                     throw 1;
                 }
-                tableRow[psym] = globalRuleNum;
+                tableRow[psym] = ruleNum;
             }
-            globalRuleNum++;
         }
         table[i] = tableRow;
     }
     return table;
+}
+
+bool CFG::match(std::string str) {
+    std::map<int, std::map<int, int>> ll1 = stateTableLL1();
+
+    std::vector<int> tokenStream;
+    std::vector<int> derivationStack;
+    derivationStack.push_back(goalSymbol);
+    int stackPos = 0;
+
+    int startPos = 0;
+    for (int i=0; i<=str.length(); i++) {
+        if (str[i] == ' ' || i == str.length()) {
+            std::string strTok = str.substr(startPos, i - startPos);
+            if (symbolMap.find(strTok) == symbolMap.end()) {
+                std::cerr << "ERROR: unexpected token '" << strTok << "'; symbol is not in grammar alphabet" << std::endl;
+                throw 1;
+            }
+            tokenStream.push_back(symbolMap[strTok]);
+            startPos = i + 1;
+        }
+    }
+    tokenStream.push_back(endSymbol);
+
+    while (stackPos < tokenStream.size()) {
+        int s = derivationStack[derivationStack.size() - 1];
+        derivationStack.pop_back();
+
+        int c = tokenStream[stackPos];
+        std::map<int, int> tableRow = ll1[s];
+        if (tableRow.find(c) == tableRow.end()) {
+            std::cerr << "ERROR: unexpected token \'" << reverseSymbolMap[c] << "\' in position " << stackPos << std::endl;
+            std::cout << derivationStack << std::endl;
+            return false;
+        }
+        int applyRule = tableRow[c];
+        GrammarRule rule = rules[s][applyRule];
+        for (int i=rule.size()-1; i>=0; i--) derivationStack.push_back(rule[i]);
+        for (int i=derivationStack.size()-1; i>=0; i--) {
+            if (derivationStack[i] == tokenStream[stackPos]) {
+                stackPos++;
+                derivationStack.pop_back();
+            }
+            else if (derivationStack[i] == lambdaSymbol) derivationStack.pop_back();
+            else break;
+        }
+    }
+
+    return derivationStack.size() == 0;
+}
+
+std::string CFG::printAllPredictSets() {
+    std::stringstream ss;
+    for (int i=0; i<=terminalThreshold; i++) {
+        for (GrammarRule rule : rules[i]) {
+            ss << "PREDICT " << reverseSymbolMap[i] << " -> ";
+            for (int sym : rule) {
+                ss << reverseSymbolMap[sym] << " ";
+            }
+            ss << std::endl;
+            ss << "\t" << toStrSyms(predictSet(i, rule)) << std::endl;
+        }
+        ss << std::endl;
+    }
+
+    return ss.str();
 }
 
 std::string CFG::formatForLGA() {

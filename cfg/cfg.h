@@ -26,6 +26,7 @@ class CFG {
     std::vector<std::string> getSymbols();
 
     std::vector<std::string> toStrSyms(std::set<int> arr);
+    std::vector<std::string> toStrSyms(std::vector<int> arr);
 
     bool derivesToLambda(int nonterminal);
     bool derivesToLambda(std::string nonterminalName);
@@ -42,8 +43,10 @@ class CFG {
 
     std::set<int> predictSet(int sym, GrammarRule rule);
 
+    bool match(std::string str);
+    std::string printAllPredictSets();
+
     std::map<int, std::map<int, int>> stateTableLL1();
 
     std::string formatForLGA();
 };
-
