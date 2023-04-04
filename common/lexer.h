@@ -24,3 +24,4 @@ class Lexer {
 };
 
 void printTokenStream(std::ostream& stream, const std::vector<token>& tokenStream);
+std::string readHexASCII(std::string str);
