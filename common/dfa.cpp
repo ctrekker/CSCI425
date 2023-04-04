@@ -1,7 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include "dfa.h"
-#include "common.h"
+#include "serialization.h"
 
 DFA::DFA(std::vector<char> alphabet, std::map<int, StateInfo> states, transition_table<int> table) {
     this->alphabet = alphabet;

@@ -2,7 +2,7 @@
 #include <map>
 #include <vector>
 
-#include "common.h"
+#include "serialization.h"
 #include "dfa.h"
 
 struct DefinitionHeader {

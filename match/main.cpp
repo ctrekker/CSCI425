@@ -3,8 +3,8 @@
 #include <fstream>
 #include <vector>
 
-#include "common.h"
-#include "nfa.h"
+#include <common/serialization.h>
+#include <common/nfa.h>
 
 void printHelp() {
     std::cout << "USAGE:" << std::endl;

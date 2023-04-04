@@ -1,7 +1,7 @@
 #pragma once
 
 #include <map>
-#include "common.h"
+#include "serialization.h"
 
 template<typename T>
 using transition_table = std::map<T, std::map<char, T>>;
