@@ -17,3 +17,8 @@ file(GLOB cfg_sources cfg/**.cpp)
 add_executable(CFG cfg/main.cpp ${cfg_sources})
 target_link_libraries(CFG COMMON)
 target_include_directories(CFG PRIVATE .)
+
+file(GLOB luther_sources luther/**.cpp)
+add_executable(LUTHER luther/main.cpp ${luther_sources})
+target_link_libraries(LUTHER COMMON)
+target_include_directories(LUTHER PRIVATE .)

@@ -2,6 +2,7 @@
 
 #include <common/serialization.h>
 #include <common/setUtils.h>
+#include <common/tree.h>
 
 #include <istream>
 #include <iostream>
@@ -308,8 +309,12 @@ std::map<int, std::map<int, int>> CFG::stateTableLL1() {
     return table;
 }
 
-bool CFG::match(std::string str) {
+std::pair<bool, ParseTree> CFG::match(std::string str) {
     std::map<int, std::map<int, int>> ll1 = stateTableLL1();
+
+    ParseTree parseTree;
+    int parseRoot = parseTree.addNode(-1);
+    int parseNode = parseRoot;
 
     std::vector<int> tokenStream;
     std::vector<int> derivationStack;
@@ -334,18 +339,39 @@ bool CFG::match(std::string str) {
         int s = derivationStack[derivationStack.size() - 1];
         derivationStack.pop_back();
 
+        std::cout << derivationStack << std::endl;
+
+        if (s == -1) {
+            parseNode = parseTree.getParent(parseNode);
+            continue;
+        }
+
+        int nextParseNode = parseTree.addNode(s);
+        parseTree.addChild(parseNode, nextParseNode);
+        parseNode = nextParseNode;
+
         int c = tokenStream[stackPos];
         std::map<int, int> tableRow = ll1[s];
+        std::cout << c;
         if (tableRow.find(c) == tableRow.end()) {
             std::cerr << "ERROR: unexpected token \'" << reverseSymbolMap[c] << "\' in position " << stackPos << std::endl;
             std::cout << derivationStack << std::endl;
-            return false;
+            return std::make_pair(false, parseTree);
         }
         int applyRule = tableRow[c];
         GrammarRule rule = rules[s][applyRule];
+        derivationStack.push_back(-1); // rule term: signifies moving up to parent node
         for (int i=rule.size()-1; i>=0; i--) derivationStack.push_back(rule[i]);
+
         for (int i=derivationStack.size()-1; i>=0; i--) {
-            if (derivationStack[i] == tokenStream[stackPos]) {
+            if (derivationStack[i] == -1) {
+                parseNode = parseTree.getParent(parseNode);
+                derivationStack.pop_back();
+            }
+            else if (derivationStack[i] == tokenStream[stackPos]) {
+                int tokenNode = parseTree.addNode(tokenStream[stackPos]);
+                parseTree.addChild(parseNode, tokenNode);
+
                 stackPos++;
                 derivationStack.pop_back();
             }
@@ -354,7 +380,7 @@ bool CFG::match(std::string str) {
         }
     }
 
-    return derivationStack.size() == 0;
+    return std::make_pair(derivationStack.size() == 0, parseTree);
 }
 
 std::string CFG::printAllPredictSets() {
@@ -420,4 +446,8 @@ std::string CFG::formatForLGA() {
     ss << "Grammar Start Symbol or Goal: " << reverseSymbolMap[goalSymbol] << std::endl;
 
     return ss.str();
+}
+
+void CFG::printParseTree(ParseTree t) {
+    std::cout << t.toString(reverseSymbolMap) << std::endl;
 }

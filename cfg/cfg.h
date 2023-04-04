@@ -4,6 +4,7 @@
 #include <vector>
 #include <istream>
 #include <set>
+#include <common/tree.h>
 
 typedef std::vector<int> GrammarRule;
 
@@ -43,10 +44,11 @@ class CFG {
 
     std::set<int> predictSet(int sym, GrammarRule rule);
 
-    bool match(std::string str);
+    std::pair<bool, ParseTree> match(std::string str);
     std::string printAllPredictSets();
 
     std::map<int, std::map<int, int>> stateTableLL1();
 
     std::string formatForLGA();
+    void printParseTree(ParseTree t);
 };
