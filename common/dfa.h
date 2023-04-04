@@ -34,12 +34,15 @@ class DFA {
         void normalize();
         std::pair<bool, int> match(std::string str);
         bool isMatch(std::string str);
+        int transition(int s, char c);
         void mergeStates();
         void pruneStates();
+        bool isAccepting(int s);
         
         // I'm not a huge fan of the output format since it doesn't include alphabet info
         // This should only be used as an output function
         std::string formatTableForAssignmentOutput();
+        static DFA readTableFromAssignmentOutput(std::string tablePath, std::vector<char> alphabet);
 
         friend std::ostream& operator<<(std::ostream& os, const DFA& table);
 };

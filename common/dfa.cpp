@@ -1,5 +1,7 @@
 #include <iostream>
 #include <sstream>
+#include <fstream>
+#include <string>
 #include "dfa.h"
 #include "serialization.h"
 
@@ -230,6 +232,16 @@ bool DFA::isMatch(std::string str) {
     return this->match(str).first;
 }
 
+int DFA::transition(int state, char c) {
+    std::map<char, int> tableRow = this->table[state];
+    int nextState = tableRow[c];
+
+    return nextState;
+}
+bool DFA::isAccepting(int s) {
+    return this->states[s].accepting;
+}
+
 state_set DFA::getForwardConnected(int state) {
     state_set conn;
     for (auto tableCell : this->table[state]) {
@@ -278,6 +290,46 @@ std::string DFA::formatTableForAssignmentOutput() {
     }
 
     return ss.str();
+}
+DFA DFA::readTableFromAssignmentOutput(std::string tablePath, std::vector<char> alphabet) {
+    std::ifstream tableFile(tablePath);
+    if (!tableFile.good()) {
+        std::cerr << "ERROR: could not access table definition file \"" << tablePath << "\"" << std::endl;
+        throw 1;
+    }
+
+    std::string line;
+    char accepting;
+    int identifier;
+    std::map<int, StateInfo> states;
+    transition_table<int> table;
+
+    while (std::getline(tableFile, line)) {
+        std::istringstream iss(line);
+        iss >> accepting >> identifier;
+
+        StateInfo info;
+        info.accepting = accepting == '+';
+        info.start = identifier == 0;
+        states[identifier] = info;
+        
+        std::string currentEdge;
+        for (int i=0; i<alphabet.size(); i++) {
+            iss >> currentEdge;
+            int parsedEdge;
+            if (currentEdge == "E") parsedEdge = -1;
+            else {
+                parsedEdge = std::stoi(currentEdge);
+            }
+            table[identifier][alphabet[i]] = parsedEdge;
+        }
+
+    }
+
+    tableFile.close();
+
+    DFA dfa(alphabet, states, table);
+    return dfa;
 }
 
 
