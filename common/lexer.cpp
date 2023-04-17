@@ -2,6 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 
 Lexer::Lexer(std::vector<char> alphabet, std::vector<DFA> dfas, std::vector<std::string> tokens, std::vector<std::string> tokenData) {
     this->alphabet = alphabet;
@@ -124,4 +125,26 @@ void printTokenStream(std::ostream& stream, const std::vector<token>& tokenStrea
         token tok = tokenStream[i];
         stream << tok.type << " " << _cleanSrcFormat(tok.value) << " " << tok.line << " " << tok.pos << std::endl;
     }
+}
+
+std::vector<token> readTokenFile(std::string path) {
+    std::ifstream tokenIn(path);
+    std::vector<token> tokenOut;
+
+    std::string line;
+    while (std::getline(tokenIn, line)) {
+        std::string type, value;
+        std::istringstream iss(line);
+
+        if (iss.rdbuf()->in_avail() == 0) continue;
+        iss >> type;
+        if (iss.rdbuf()->in_avail() != 0) iss >> value;
+
+        token t;
+        t.type = type;
+        t.value = value;
+        tokenOut.push_back(t);
+    }
+    
+    return tokenOut;
 }

@@ -22,3 +22,8 @@ file(GLOB luther_sources luther/**.cpp)
 add_executable(LUTHER luther/main.cpp ${luther_sources})
 target_link_libraries(LUTHER COMMON)
 target_include_directories(LUTHER PRIVATE .)
+
+file (GLOB lga_sources lga/**.cpp)
+add_executable(LGA lga/main.cpp ${lga_sources})
+target_link_libraries(LGA COMMON)
+target_include_directories(LGA PRIVATE .)

@@ -4,7 +4,8 @@
 #include <vector>
 #include <istream>
 #include <set>
-#include <common/tree.h>
+#include "tree.h"
+#include "lexer.h"
 
 typedef std::vector<int> GrammarRule;
 
@@ -45,10 +46,12 @@ class CFG {
     std::set<int> predictSet(int sym, GrammarRule rule);
 
     std::pair<bool, ParseTree> match(std::string str);
+    std::pair<bool, ParseTree> match(std::vector<token> tokenStream);
     std::string printAllPredictSets();
 
     std::map<int, std::map<int, int>> stateTableLL1();
 
     std::string formatForLGA();
     void printParseTree(ParseTree t);
+    void saveGraphvizTree(std::string file, ParseTree t);
 };

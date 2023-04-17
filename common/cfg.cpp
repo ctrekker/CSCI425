@@ -1,10 +1,12 @@
 #include "cfg.h"
 
-#include <common/serialization.h>
-#include <common/setUtils.h>
-#include <common/tree.h>
+#include "serialization.h"
+#include "setUtils.h"
+#include "tree.h"
+#include "lexer.h"
 
 #include <istream>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -310,17 +312,7 @@ std::map<int, std::map<int, int>> CFG::stateTableLL1() {
 }
 
 std::pair<bool, ParseTree> CFG::match(std::string str) {
-    std::map<int, std::map<int, int>> ll1 = stateTableLL1();
-
-    ParseTree parseTree;
-    int parseRoot = parseTree.addNode(-1);
-    int parseNode = parseRoot;
-
-    std::vector<int> tokenStream;
-    std::vector<int> derivationStack;
-    derivationStack.push_back(goalSymbol);
-    int stackPos = 0;
-
+    std::vector<token> tokenStream;
     int startPos = 0;
     for (int i=0; i<=str.length(); i++) {
         if (str[i] == ' ' || i == str.length()) {
@@ -329,30 +321,49 @@ std::pair<bool, ParseTree> CFG::match(std::string str) {
                 std::cerr << "ERROR: unexpected token '" << strTok << "'; symbol is not in grammar alphabet" << std::endl;
                 throw 1;
             }
-            tokenStream.push_back(symbolMap[strTok]);
+            token t;
+            t.type = symbolMap[strTok];
+            t.value = "";
+            tokenStream.push_back(t);
             startPos = i + 1;
         }
     }
-    tokenStream.push_back(endSymbol);
+    return match(tokenStream);
+}
+
+std::pair<bool, ParseTree> CFG::match(std::vector<token> tokenStream) {
+    token t;
+    t.type = endSymbol;
+    t.value = "";
+    tokenStream.push_back(t);
+
+    std::map<int, std::map<int, int>> ll1 = stateTableLL1();
+
+    ParseTree parseTree;
+    int parseRoot = parseTree.addNode(-1, EMPTY_METADATA);
+    int parseNode = parseRoot;
+
+    std::vector<int> derivationStack;
+    derivationStack.push_back(goalSymbol);
+    int stackPos = 0;
 
     while (stackPos < tokenStream.size()) {
         int s = derivationStack[derivationStack.size() - 1];
         derivationStack.pop_back();
 
-        std::cout << derivationStack << std::endl;
+        // std::cout << derivationStack << std::endl;
 
         if (s == -1) {
             parseNode = parseTree.getParent(parseNode);
             continue;
         }
 
-        int nextParseNode = parseTree.addNode(s);
+        int nextParseNode = parseTree.addNode(s, EMPTY_METADATA);
         parseTree.addChild(parseNode, nextParseNode);
         parseNode = nextParseNode;
 
-        int c = tokenStream[stackPos];
+        int c = symbolMap[tokenStream[stackPos].type];
         std::map<int, int> tableRow = ll1[s];
-        std::cout << c;
         if (tableRow.find(c) == tableRow.end()) {
             std::cerr << "ERROR: unexpected token \'" << reverseSymbolMap[c] << "\' in position " << stackPos << std::endl;
             std::cout << derivationStack << std::endl;
@@ -362,14 +373,15 @@ std::pair<bool, ParseTree> CFG::match(std::string str) {
         GrammarRule rule = rules[s][applyRule];
         derivationStack.push_back(-1); // rule term: signifies moving up to parent node
         for (int i=rule.size()-1; i>=0; i--) derivationStack.push_back(rule[i]);
-
         for (int i=derivationStack.size()-1; i>=0; i--) {
             if (derivationStack[i] == -1) {
                 parseNode = parseTree.getParent(parseNode);
                 derivationStack.pop_back();
             }
-            else if (derivationStack[i] == tokenStream[stackPos]) {
-                int tokenNode = parseTree.addNode(tokenStream[stackPos]);
+            else if (derivationStack[i] == symbolMap[tokenStream[stackPos].type]) {
+                tree_metadata meta;
+                meta.value = tokenStream[stackPos].value;
+                int tokenNode = parseTree.addNode(symbolMap[tokenStream[stackPos].type], meta);
                 parseTree.addChild(parseNode, tokenNode);
 
                 stackPos++;
@@ -450,4 +462,12 @@ std::string CFG::formatForLGA() {
 
 void CFG::printParseTree(ParseTree t) {
     std::cout << t.toString(reverseSymbolMap) << std::endl;
+}
+
+void CFG::saveGraphvizTree(std::string file, ParseTree t) {
+    std::ofstream fileOut(file);
+    std::map<int, std::string> rsm = reverseSymbolMap;
+    rsm[-1] = "ROOT";
+    fileOut << t.toGraphviz(rsm);
+    fileOut.close();
 }

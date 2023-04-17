@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "cfg.h"
+#include <common/cfg.h>
 #include <common/serialization.h>
 #include <common/tree.h>
 
