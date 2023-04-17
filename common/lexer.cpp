@@ -17,7 +17,7 @@ std::vector<token> Lexer::tokenize(const std::string& inputStr) {
     std::vector<token> tokenStream;
     std::vector<int> dfaStates(dfas.size(), 0);
     std::unordered_set<int> inactiveDfas;
-    std::map<int, int> inactiveMatchedDfaEnds;
+    std::map<int, int> matchedDfaEnds;
 
     // line counting variables
     int lineNum = 1;
@@ -40,9 +40,10 @@ std::vector<token> Lexer::tokenize(const std::string& inputStr) {
                 
                 if (nextState == -1) {
                     inactiveDfas.insert(i);
-                    if (dfas[i].isAccepting(currentState)) {
-                        inactiveMatchedDfaEnds[i] = pos;
-                    }
+                }
+
+                if (dfas[i].isAccepting(currentState)) {
+                    matchedDfaEnds[i] = pos;
                 }
 
                 dfaStates[i] = nextState;
@@ -53,14 +54,14 @@ std::vector<token> Lexer::tokenize(const std::string& inputStr) {
             if(pos == inputStr.length()) {
                 for (int i=0; i<dfas.size(); i++) {
                     if (dfas[i].isAccepting(dfaStates[i])) {
-                        inactiveMatchedDfaEnds[i] = pos;
+                        matchedDfaEnds[i] = pos;
                     }
                 }
             }
         }
 
         int maxEnd = 0, maxToken = 0;
-        for(std::pair<int, int> dfaEnds : inactiveMatchedDfaEnds) {
+        for(std::pair<int, int> dfaEnds : matchedDfaEnds) {
             // second disjunction condition checks for equal-length tokens, and gives precedence to 
             // those which occur earlier in the definition file
             if (dfaEnds.second > maxEnd || (dfaEnds.second == maxEnd && dfaEnds.first < maxToken)) {
@@ -69,7 +70,7 @@ std::vector<token> Lexer::tokenize(const std::string& inputStr) {
             }
         }
 
-        inactiveMatchedDfaEnds.clear();
+        matchedDfaEnds.clear();
         inactiveDfas.clear();
         std::fill(dfaStates.begin(), dfaStates.end(), 0);
 
@@ -125,6 +126,29 @@ void printTokenStream(std::ostream& stream, const std::vector<token>& tokenStrea
         token tok = tokenStream[i];
         stream << tok.type << " " << _cleanSrcFormat(tok.value) << " " << tok.line << " " << tok.pos << std::endl;
     }
+}
+
+std::string readHexASCII(std::string str) {
+    std::stringstream out;
+    for (int i=0; i<str.size(); i++) {
+        char c = str.at(i);
+        if (c == 'x') {
+            char d2 = str.at(i+1);
+            char d1 = str.at(i+2);
+            i+=2;
+
+            int x;
+            std::stringstream ss;
+            ss << std::hex << d2 << d1;
+            ss >> x;
+
+            out << (char)x;
+        }
+        else {
+            out << c;
+        }
+    }
+    return out.str();
 }
 
 std::vector<token> readTokenFile(std::string path) {

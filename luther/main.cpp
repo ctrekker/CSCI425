@@ -18,6 +18,10 @@ struct tokdefs {
 
 tokdefs readTokenDefinitions(std::string path) {
     std::ifstream defFile(path);
+    if (!defFile.good()) {
+        std::cerr << "ERROR: cannot access token definition at \"" << path << "\"" << std::endl;
+        throw 1;
+    }
 
     std::string alphabetDef;
     getline(defFile, alphabetDef);
@@ -60,7 +64,7 @@ tokdefs readTokenDefinitions(std::string path) {
         toktable tab;
         tab.path = tableFile;
         tab.token = tokenName;
-        tab.data = tokenData;
+        tab.data = readHexASCII(tokenData);
         tables.push_back(tab);
     }
 
@@ -79,16 +83,19 @@ void printHelp() {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cout << "ERROR: expected lexer token definition file path in argument 1" << std::endl;
+        std::cerr << "ERROR: expected lexer token definition file path in argument 1" << std::endl;
         printHelp();
+        return 1;
     }
     if (argc < 3) {
-        std::cout << "ERROR: expected program source file path in argument 2" << std::endl;
+        std::cerr << "ERROR: expected program source file path in argument 2" << std::endl;
         printHelp();
+        return 1;
     }
     if (argc < 4) {
-        std::cout << "ERROR: expected token output file path in argument 3" << std::endl;
+        std::cerr << "ERROR: expected token output file path in argument 3" << std::endl;
         printHelp();
+        return 1;
     }
 
     std::string defFile = argv[1];
@@ -109,11 +116,19 @@ int main(int argc, char** argv) {
 
         Lexer lex(def.alphabet, dfas, tokens, tokenData);
         std::ifstream srcStream(srcFile);
+        if (!srcStream.good()) {
+            std::cerr << "ERROR: could not access program source file \"" << srcFile << "\"" << std::endl;
+            throw 1;
+        }
         std::stringstream srcBuf;
         srcBuf << srcStream.rdbuf();
         std::vector<token> tokenStream = lex.tokenize(srcBuf.str());
 
         std::ofstream tokenOutput(tokFile);
+        if (!tokenOutput.good()) {
+            std::cerr << "ERROR: could not access token output file \"" << tokFile << "\"" << std::endl;
+            throw 1;
+        }
         printTokenStream(tokenOutput, tokenStream);
         tokenOutput.close();
     } catch(int e) {
