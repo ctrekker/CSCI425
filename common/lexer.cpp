@@ -4,6 +4,15 @@
 #include <iomanip>
 #include <fstream>
 
+token create_token(std::string type, std::string value, int line, int pos) {
+    token t;
+    t.type = type;
+    t.value = value;
+    t.line = line;
+    t.pos = pos;
+    return t;
+}
+
 Lexer::Lexer(std::vector<char> alphabet, std::vector<DFA> dfas, std::vector<std::string> tokens, std::vector<std::string> tokenData) {
     this->alphabet = alphabet;
     std::unordered_set<char> alphabetSet(alphabet.begin(), alphabet.end());

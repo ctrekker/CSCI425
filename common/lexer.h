@@ -11,6 +11,8 @@ struct token {
     int pos;
 };
 
+token create_token(std::string type, std::string value, int line, int pos);
+
 class Lexer {
     private:
         std::vector<char> alphabet;

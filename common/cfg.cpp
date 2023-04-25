@@ -242,6 +242,8 @@ std::set<int> CFG::followSet(const int x, std::set<int> visited) {
         return emptySet;
     }
 
+    // std::cout << "X: " << x << std::endl;
+
     visited.insert(x);
     std::set<int> follow;
     for (std::pair<int, std::vector<GrammarRule>> rulePair : rules) {
@@ -256,21 +258,21 @@ std::set<int> CFG::followSet(const int x, std::set<int> visited) {
                     unionMutating(follow, first);
                 }
                 bool allSubsequentLambdas = true;
+                // for (auto itr2 = itr; itr2 < rule.end(); itr2++) {
+                //     if (!isTerminal(*itr2)) {
+                //         allSubsequentLambdas = false;
+                //         break;
+                //     }
+                // }
                 for (auto itr2 = itr; itr2 < rule.end(); itr2++) {
-                    if (!isTerminal(*itr2)) {
+                    if (!derivesToLambda(*itr2)) {
                         allSubsequentLambdas = false;
                         break;
                     }
                 }
-                if (allSubsequentLambdas) {
-                    for (auto itr2 = itr; itr2 < rule.end(); itr2++) {
-                        if (!derivesToLambda(*itr2)) {
-                            allSubsequentLambdas = false;
-                            break;
-                        }
-                    }
-                }
                 if(allSubsequentLambdas && visited.find(rulePair.first) == visited.end()) {
+                    // std::cout << rule << std::endl;
+                    // std::cout << x << ",SUBF: " << rulePair.first << std::endl;
                     std::set<int> subFollow = followSet(rulePair.first, visited);
                     unionMutating(follow, subFollow);
                 }
@@ -291,7 +293,7 @@ std::set<int> CFG::predictSet(int sym, GrammarRule rule) {
 }
 
 std::map<int, std::map<int, int>> CFG::stateTableLL1() {
-    // maps NONTERM -> (TERM -> GLOBALRULE)
+    // maps NONTERM -> (TERM -> LOCALRULE)
     std::map<int, std::map<int, int>> table;
     for (int i = 0; i <= terminalThreshold; i++) {
         std::map<int, int> tableRow;
@@ -333,11 +335,17 @@ std::pair<bool, ParseTree> CFG::match(std::string str) {
 
 std::pair<bool, ParseTree> CFG::match(std::vector<token> tokenStream) {
     token t;
-    t.type = endSymbol;
+    t.type = "$";
     t.value = "";
     tokenStream.push_back(t);
 
     std::map<int, std::map<int, int>> ll1 = stateTableLL1();
+
+
+    // std::cout << followSet(5) << std::endl;
+    // std::cout << derivesToLambda(3) << std::endl;
+    // std::cout << ll1 << std::endl;
+    // std::cout << reverseSymbolMap << std::endl;
 
     ParseTree parseTree;
     int parseRoot = parseTree.addNode(-1, EMPTY_METADATA);
@@ -351,7 +359,8 @@ std::pair<bool, ParseTree> CFG::match(std::vector<token> tokenStream) {
         int s = derivationStack[derivationStack.size() - 1];
         derivationStack.pop_back();
 
-        // std::cout << derivationStack << std::endl;
+        // std::cout << s << ":" << derivationStack << " <==> " << stackPos << std::endl;
+        // std::cout << "SYM: " << c << "S"
 
         if (s == -1) {
             parseNode = parseTree.getParent(parseNode);

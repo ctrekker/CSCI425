@@ -27,3 +27,8 @@ file (GLOB lga_sources lga/**.cpp)
 add_executable(LGA lga/main.cpp ${lga_sources})
 target_link_libraries(LGA COMMON)
 target_include_directories(LGA PRIVATE .)
+
+file (GLOB wreck_sources wreck/**.cpp)
+add_executable(WRECK wreck/main.cpp ${wreck_sources})
+target_link_libraries(WRECK COMMON)
+target_include_directories(WRECK PRIVATE .)
