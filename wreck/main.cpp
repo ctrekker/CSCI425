@@ -98,13 +98,10 @@ int main(int argc, char** argv) {
     std::string configFile = argv[1];
     std::string defFile = argv[2];
 
-    std::vector<token> regexTokens = tokenizeRegex("(\\s|\\\\|b|c|d)*a");
-    for (token t : regexTokens) {
-        std::cout << t.type << " ";
-    }
-    std::cout << std::endl;
-    std::pair<bool, ParseTree> result = llre().match(regexTokens);
-    llre().saveGraphvizTree("testplot.gv.txt", result.second);
+    ParseTree result = parseRegex("(\\s|\\\\|b|c|d)*a");
+    // ParseTree result = parseRegex("(a|b|c)");
+    // ParseTree result = parseRegex("Q-T.g+");
+    llre().saveGraphvizTree("testplot.gv.txt", result);
 
     // try {
     //     tokdefs def = readTokenConfig(configFile);

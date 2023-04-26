@@ -2,10 +2,14 @@
 
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 #include "serialization.h"
 
 inline int ParseTree::rootNode() {
-    return 0;
+    return rootId;
+}
+void ParseTree::setRoot(int rootId) {
+    this->rootId = rootId;
 }
 
 std::vector<int>* ParseTree::getChildren(int nodeId) {
@@ -31,6 +35,18 @@ int ParseTree::addNode(int label, tree_metadata meta) {
 void ParseTree::addChild(int parent, int child) {
     adj[parent].push_back(child);
     parentMap[child] = parent;
+}
+
+void ParseTree::insertChild(int parent, int child, int pos) {
+    adj[parent].insert(adj[parent].begin() + pos, child);
+    parentMap[child] = parent;
+}
+
+void ParseTree::removeChild(int parent, int child) {
+    std::vector<int>& adjParent = adj[parent];
+    
+    adjParent.erase(std::remove(adjParent.begin(), adjParent.end(), child), adjParent.end());
+    parentMap.erase(child);
 }
 
 tree_metadata* ParseTree::getMetadata(int node) {
@@ -81,7 +97,13 @@ std::string ParseTree::toString(std::map<int, std::string> labelMap, int node, i
 }
 
 void _gvRecurse(std::ostream& os, ParseTree *tree, std::map<int, std::string> &labelMap, int node, int *idx) {
-    os << "n" << *idx << " [label=\"" << labelMap[tree->getLabel(node)] << "\"] ;" << std::endl;
+    os << "n" << *idx << " [label=\"";
+    os << labelMap[tree->getLabel(node)];
+    std::string metaval = tree->getMetadata(node)->value;
+    if (metaval.size() > 0) {
+        os << " (" << metaval << ")" << std::endl;
+    }
+    os << "\"] ;" << std::endl;
     int parentIdx = *idx;
     (*idx)++;
     int childIdx;

@@ -6,4 +6,5 @@
 #include "cfg.h"
 
 std::vector<token> tokenizeRegex(std::string regex);
+ParseTree parseRegex(std::string regex);
 CFG llre();

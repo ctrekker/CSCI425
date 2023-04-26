@@ -8,6 +8,7 @@
 #include "lexer.h"
 
 typedef std::vector<int> GrammarRule;
+typedef void (*sdtcallback)(ParseTree&, int, std::map<std::string, int>&);
 
 class CFG {
     private:
@@ -47,9 +48,13 @@ class CFG {
 
     std::pair<bool, ParseTree> match(std::string str);
     std::pair<bool, ParseTree> match(std::vector<token> tokenStream);
+    std::pair<bool, ParseTree> match(std::vector<token> tokenStream, std::map<std::string, sdtcallback> translations);
     std::string printAllPredictSets();
 
     std::map<int, std::map<int, int>> stateTableLL1();
+    
+    // syntax directed translation
+    void performTranslation(std::map<int, sdtcallback> translations, ParseTree &tree, int node);
 
     std::string formatForLGA();
     void printParseTree(ParseTree t);

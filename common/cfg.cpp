@@ -254,7 +254,8 @@ std::set<int> CFG::followSet(const int x, std::set<int> visited) {
                 if (itr != rule.end()) {
                     std::vector<int> pi(rule.end() - itr);
                     copy(itr, rule.end(), pi.begin());
-                    std::set<int> first = firstSet(pi, visited);
+                    std::cout << pi << std::endl;
+                    std::set<int> first = firstSet(pi);
                     unionMutating(follow, first);
                 }
                 bool allSubsequentLambdas = true;
@@ -271,8 +272,7 @@ std::set<int> CFG::followSet(const int x, std::set<int> visited) {
                     }
                 }
                 if(allSubsequentLambdas && visited.find(rulePair.first) == visited.end()) {
-                    // std::cout << rule << std::endl;
-                    // std::cout << x << ",SUBF: " << rulePair.first << std::endl;
+                    std::cout << x << ",SUBF: " << rulePair.first << std::endl;
                     std::set<int> subFollow = followSet(rulePair.first, visited);
                     unionMutating(follow, subFollow);
                 }
@@ -334,18 +334,33 @@ std::pair<bool, ParseTree> CFG::match(std::string str) {
 }
 
 std::pair<bool, ParseTree> CFG::match(std::vector<token> tokenStream) {
+    std::map<std::string, sdtcallback> emptyTranslations;
+    return match(tokenStream, emptyTranslations);
+}
+
+std::pair<bool, ParseTree> CFG::match(std::vector<token> tokenStream, std::map<std::string, sdtcallback> translations) {
     token t;
     t.type = "$";
     t.value = "";
     tokenStream.push_back(t);
 
+    GrammarRule g;
+    g.push_back(8);
+    std::cout << followSet(5) << std::endl;
+    std::cout << reverseSymbolMap << std::endl;
+    // throw 0;
+
     std::map<int, std::map<int, int>> ll1 = stateTableLL1();
 
+    std::map<int, sdtcallback> encodedTranslations;
+    for (std::pair<std::string, sdtcallback> translatePair : translations) {
+        encodedTranslations[symbolMap[translatePair.first]] = translatePair.second;
+    }
 
-    // std::cout << followSet(5) << std::endl;
+
+    
     // std::cout << derivesToLambda(3) << std::endl;
-    // std::cout << ll1 << std::endl;
-    // std::cout << reverseSymbolMap << std::endl;
+    std::cout << ll1 << std::endl;
 
     ParseTree parseTree;
     int parseRoot = parseTree.addNode(-1, EMPTY_METADATA);
@@ -359,7 +374,7 @@ std::pair<bool, ParseTree> CFG::match(std::vector<token> tokenStream) {
         int s = derivationStack[derivationStack.size() - 1];
         derivationStack.pop_back();
 
-        // std::cout << s << ":" << derivationStack << " <==> " << stackPos << std::endl;
+        std::cout << s << ":" << derivationStack << " <==> " << stackPos << std::endl;
         // std::cout << "SYM: " << c << "S"
 
         if (s == -1) {
@@ -384,6 +399,7 @@ std::pair<bool, ParseTree> CFG::match(std::vector<token> tokenStream) {
         for (int i=rule.size()-1; i>=0; i--) derivationStack.push_back(rule[i]);
         for (int i=derivationStack.size()-1; i>=0; i--) {
             if (derivationStack[i] == -1) {
+                performTranslation(encodedTranslations, parseTree, parseNode);
                 parseNode = parseTree.getParent(parseNode);
                 derivationStack.pop_back();
             }
@@ -401,7 +417,17 @@ std::pair<bool, ParseTree> CFG::match(std::vector<token> tokenStream) {
         }
     }
 
+    // set new root to user-defined goal nonterminal
+    parseTree.setRoot(parseTree.getChildren(parseTree.rootNode())->at(0));
+
     return std::make_pair(derivationStack.size() == 0, parseTree);
+}
+
+void CFG::performTranslation(std::map<int, sdtcallback> translations, ParseTree &tree, int node) {
+    int label = tree.getLabel(node);
+    if (translations.find(label) != translations.end()) {
+        (*translations[label])(tree, node, symbolMap);
+    }
 }
 
 std::string CFG::printAllPredictSets() {
