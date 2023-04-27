@@ -168,7 +168,7 @@ std::string charToHex(char c) {
     return out.str();
 }
 std::string charToHexIfNecessary(char c) {
-    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
         std::string s;
         s.push_back(c);
         return s;

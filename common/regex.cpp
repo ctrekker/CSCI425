@@ -157,6 +157,7 @@ ParseTree parseRegex(std::string regex) {
     translationMap["RE"]      = &_sdt_re;
 
     std::pair<bool, ParseTree> result = _llre.match(regexTokens, translationMap);
+    if (!result.first) throw 2;
     return result.second;
 }
 
@@ -176,6 +177,14 @@ std::vector<token> tokenizeRegex(std::string regex) {
             }
             else if (c == 's') {
                 t = create_token("char", " ", 1, i);
+            }
+            else if (c == 'n') {
+                t = create_token("char", "\n", 1, i);
+            }
+            else {
+                std::string s;
+                s.push_back(c);
+                t = create_token("char", s, 1, i);
             }
             controlChar = false;
         }
@@ -303,6 +312,7 @@ void _RegexToNFA::processPipe(int node, int src, int dst) {
 }
 void _RegexToNFA::processKleene(int node, int src, int dst) {
     processChild(ast.getChildren(node)->at(0), src, dst);
+    nfa->addLambda(src, dst);
     nfa->addLambda(dst, src);
 }
 void _RegexToNFA::processPlus(int node, int src, int dst) {
@@ -321,6 +331,7 @@ void _RegexToNFA::processRange(int node, int src, int dst) {
     int rightChild = ast.getChildren(node)->at(1);
     char asciiStart = ast.getMetadata(leftChild)->value.at(0);
     char asciiEnd = ast.getMetadata(rightChild)->value.at(0);
+    if (asciiStart > asciiEnd) throw 3;  // code for semantic error
     for (char c = asciiStart; c <= asciiEnd; c++) {
         nfa->addEdge(src, dst, c);
     }

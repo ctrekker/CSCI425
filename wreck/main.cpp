@@ -111,26 +111,38 @@ int main(int argc, char** argv) {
     for (toktable tab : def.tables) {
         // std::cout << "TOK: " << tab.token << "; REGEX: " << tab.regex << std::endl;
         // if (tab.data.size() > 0) std::cout << "\tDATA: " << tab.data << std::endl;
-
-        ParseTree regexAst = parseRegex(tab.regex);
-        NFABuilder nfa = nfaRegex(regexAst, def.alphabet, rsmap);
-        Definition nfaDef = nfa.toDefinition(def.alphabet);
         
-        std::ostringstream oss;
-        oss << tab.token << ".nfa";
-        std::ofstream defOutput(oss.str());
-        writeDefinition(defOutput, nfaDef);
-        defOutput.close();
+        try {
+            ParseTree regexAst = parseRegex(tab.regex);
+            NFABuilder nfa = nfaRegex(regexAst, def.alphabet, rsmap);
+            Definition nfaDef = nfa.toDefinition(def.alphabet);
+            
+            std::ostringstream oss;
+            oss << tab.token << ".nfa";
+            std::ofstream defOutput(oss.str());
+            if (!defOutput.good()) {
+                std::cout << "ERROR: could not write to nfa output file \"" << tab.token << ".nfa\"" << std::endl;
+                throw 1;
+            }
+            writeDefinition(defOutput, nfaDef);
+            defOutput.close();
+        } catch(int e) {
+            return e;
+        }
     }
 
     // write output scan table file
     std::ofstream scan(scanFile);
+    if (!scan.good()) {
+        std::cerr << "ERROR: could not write to scanner definition file \"" << scanFile << "\"" << std::endl;
+        return 1;
+    }
     for (char c : def.alphabet) {
         scan << charToHexIfNecessary(c);
     }
     scan << std::endl;
     for (toktable table : def.tables) {
-        scan << table.token << ".tt " << table.token << " " << table.data << std::endl;
+        scan << table.token << ".tt " << table.token << " " << writeHexASCII(table.data) << std::endl;
     }
     scan.close();
     
