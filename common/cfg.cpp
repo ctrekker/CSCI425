@@ -143,6 +143,13 @@ std::vector<std::string> CFG::getSymbols() {
     return out;
 }
 
+std::map<std::string, int> CFG::getSymbolMap() {
+    return symbolMap;
+}
+std::map<int, std::string> CFG::getReverseSymbolMap() {
+    return reverseSymbolMap;
+}
+
 
 bool CFG::derivesToLambda(std::string nonterminalName) {
     return derivesToLambda(symbolMap[nonterminalName]);

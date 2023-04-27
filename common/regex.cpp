@@ -1,6 +1,7 @@
 #include <sstream>
 #include "regex.h"
 #include "cfg.h"
+#include "nfa.h"
 
 const char* _llreCfg = R"(
      RE -> ALT $
@@ -27,6 +28,7 @@ CFG llre() {
 }
 
 typedef std::map<std::string, int>& symbolmap;
+typedef std::map<int, std::string>& rsymbolmap;
 
 void _sdt_nucleus(ParseTree &tree, int node, symbolmap smap) {
     std::vector<int>* children = tree.getChildren(node);
@@ -217,4 +219,134 @@ std::vector<token> tokenizeRegex(std::string regex) {
         tokStream.push_back(t);
     }
     return tokStream;
+}
+
+
+class _RegexToNFA {
+    private:
+        ParseTree ast;
+        std::vector<char> alphabet;
+        std::map<int, std::string> rsmap;
+        NFABuilder* nfa;
+
+        void lambdaWrap(int node, int src, int dst);
+        void processChild(int node, int src, int dst);
+        void processSeq(int node, int src, int dst);
+        void processPipe(int node, int src, int dst);
+        void processKleene(int node, int src, int dst);
+        void processPlus(int node, int src, int dst);
+        void processChar(int node, int src, int dst);
+        void processDot(int node, int src, int dst);
+        void processRange(int node, int src, int dst);
+    
+    public:
+        _RegexToNFA(ParseTree ast, std::vector<char> alphabet, std::map<int, std::string> rsmap);
+
+        NFABuilder convert(int node);
+};
+
+_RegexToNFA::_RegexToNFA(ParseTree ast, std::vector<char> alphabet, std::map<int, std::string> rsmap) {
+    this->ast = ast;
+    this->alphabet = alphabet;
+    this->rsmap = rsmap;
+}
+
+void _RegexToNFA::processChild(int node, int src, int dst) {
+    int label = ast.getLabel(node);
+    std::string strLabel = rsmap[label];
+    std::cout << strLabel << std::endl;
+
+    if (strLabel == "RE") {
+        processChild(ast.getChildren(node)->at(0), src, dst);
+    }
+    else if (strLabel == "SEQ") {
+        processSeq(node, src, dst);
+    }
+    else if (strLabel == "pipe") {
+        processPipe(node, src, dst);
+    }
+    else if (strLabel == "kleene") {
+        processKleene(node, src, dst);
+    }
+    else if (strLabel == "plus") {
+        processPlus(node, src, dst);
+    }
+    else if (strLabel == "char") {
+        processChar(node, src, dst);
+    }
+    else if (strLabel == "range") {
+        processRange(node, src, dst);
+    }
+    else if (strLabel == "dot") {
+        processDot(node, src, dst);
+    }
+}
+void _RegexToNFA::lambdaWrap(int node, int src, int dst) {
+    int left = nfa->addState();
+    int right = nfa->addState();
+    nfa->addLambda(src, left);
+    nfa->addLambda(right, dst);
+    processChild(node, left, right);
+}
+void _RegexToNFA::processSeq(int node, int src, int dst) {
+    int childdest;
+    for (int child : *ast.getChildren(node)) {
+        childdest = nfa->addState();
+        lambdaWrap(child, src, childdest);
+        src = childdest;
+    }
+    nfa->addLambda(childdest, dst);
+}
+void _RegexToNFA::processPipe(int node, int src, int dst) {
+    for (int child : *ast.getChildren(node)) {
+        lambdaWrap(child, src, dst);
+    }
+}
+void _RegexToNFA::processKleene(int node, int src, int dst) {
+    processChild(ast.getChildren(node)->at(0), src, dst);
+    nfa->addLambda(dst, src);
+}
+void _RegexToNFA::processPlus(int node, int src, int dst) {
+    int intermediate = nfa->addState();
+    int child = ast.getChildren(node)->at(0);
+    processChild(child, src, intermediate);
+    processKleene(node, intermediate, dst);
+}
+void _RegexToNFA::processChar(int node, int src, int dst) {
+    // in theory metadata tags should NEVER be longer than 1 character for regular expressions
+    char c = ast.getMetadata(node)->value.at(0);
+    nfa->addEdge(src, dst, c);
+}
+void _RegexToNFA::processRange(int node, int src, int dst) {
+    int leftChild = ast.getChildren(node)->at(0);
+    int rightChild = ast.getChildren(node)->at(1);
+    char asciiStart = ast.getMetadata(leftChild)->value.at(0);
+    char asciiEnd = ast.getMetadata(rightChild)->value.at(0);
+    for (char c = asciiStart; c <= asciiEnd; c++) {
+        nfa->addEdge(src, dst, c);
+    }
+}
+void _RegexToNFA::processDot(int node, int src, int dst) {
+    for (char c : alphabet) {
+        nfa->addEdge(src, dst, c);
+    }
+}
+
+NFABuilder _RegexToNFA::convert(int node) {
+    NFABuilder nfa;
+    int start = nfa.addState();
+    int end = nfa.addState();
+    nfa.setAcceptingState(end);
+
+    this->nfa = &nfa;
+
+    processChild(node, start, end);
+    return nfa;
+}
+
+
+// converts a regex AST into an NFA implementation
+NFABuilder nfaRegex(ParseTree& ast, std::vector<char> alphabet, rsymbolmap rsmap) {
+    _RegexToNFA r(ast, alphabet, rsmap);
+    return r.convert(ast.rootNode());
 }

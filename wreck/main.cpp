@@ -6,6 +6,7 @@
 #include <common/lexer.h>
 #include <common/cfg.h>
 #include <common/regex.h>
+#include <common/nfa.h>
 
 struct toktable {
     std::string regex;
@@ -98,25 +99,31 @@ int main(int argc, char** argv) {
     std::string configFile = argv[1];
     std::string defFile = argv[2];
 
+    tokdefs def;
+    try {
+        def = readTokenConfig(configFile);
+        // for (toktable tab : def.tables) {
+        //     std::cout << "TOK: " << tab.token << "; REGEX: " << tab.regex << std::endl;
+        //     if (tab.data.size() > 0) std::cout << "\tDATA: " << tab.data << std::endl;
+
+        //     break;
+        // }
+
+    } catch(int e) {
+        return e;
+    }
+
     ParseTree result = parseRegex("(\\s|\\\\|b|c|d)*a");
-    // ParseTree result = parseRegex("(a|b|c)");
-    // ParseTree result = parseRegex("Q-T.g+");
+    // ParseTree result = parseRegex("a|b|c");
+    // ParseTree result = parseRegex("Q-T(a.)*g+");
+
     llre().saveGraphvizTree("testplot.gv.txt", result);
 
-    // try {
-    //     tokdefs def = readTokenConfig(configFile);
-    //     for (toktable tab : def.tables) {
-    //         std::cout << "TOK: " << tab.token << "; REGEX: " << tab.regex << std::endl;
-    //         if (tab.data.size() > 0) std::cout << "\tDATA: " << tab.data << std::endl;
-
-
-
-    //         break;
-    //     }
-
-    // } catch(int e) {
-    //     return e;
-    // }
+    std::map<int, std::string> rsmap = llre().getReverseSymbolMap();
+    NFABuilder nfa = nfaRegex(result, def.alphabet, rsmap);
+    std::ofstream nfaFile("nfa.gv.txt");
+    nfaFile << nfa.toGraphviz();
+    nfaFile.close();
 
     return 0;
 }

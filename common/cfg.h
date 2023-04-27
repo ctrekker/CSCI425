@@ -27,6 +27,8 @@ class CFG {
     bool isTerminal(std::string symStr);
     inline bool isTerminal(int sym);
     std::vector<std::string> getSymbols();
+    std::map<std::string, int> getSymbolMap();
+    std::map<int, std::string> getReverseSymbolMap();
 
     std::vector<std::string> toStrSyms(std::set<int> arr);
     std::vector<std::string> toStrSyms(std::vector<int> arr);

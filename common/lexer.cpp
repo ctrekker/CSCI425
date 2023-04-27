@@ -160,6 +160,28 @@ std::string readHexASCII(std::string str) {
     return out.str();
 }
 
+std::string charToHex(char c) {
+    int msb = c / 16;
+    int lsb = c % 16;
+    std::stringstream out;
+    out << "x" << std::hex << msb << lsb;
+    return out.str();
+}
+std::string writeHexASCII(std::string str) {
+    std::stringstream out;
+    for (int i=0; i<str.size(); i++) {
+        char c = str.at(i);
+        if ((c > 'A' && c < 'Z') || (c > 'a' && c < 'z')) {
+            out << c;
+        }
+        else {
+            
+        }
+    }
+    return out.str();
+}
+
+
 std::vector<token> readTokenFile(std::string path) {
     std::ifstream tokenIn(path);
     std::vector<token> tokenOut;

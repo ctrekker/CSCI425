@@ -46,3 +46,20 @@ class NFA {
         std::vector<Transition> lambdaTransitions(int s);
         std::vector<Transition> charTransitions(int s, char c);
 };
+
+class NFABuilder {
+    private:
+        // (state, character) => state'
+        std::map<int, std::map<char, int>> transitions;
+        // state => { lambda_states }
+        std::map<int, std::unordered_set<int>> lambdas;
+        int acceptingState = 0;
+        int nextState = 0;
+    public:
+        int addState();
+        void addEdge(int src, int dst, char c);
+        void addLambda(int src, int dst);
+        int getAcceptingState();
+        void setAcceptingState(int acceptingState);
+        std::string toGraphviz();
+};

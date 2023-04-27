@@ -7,6 +7,7 @@
 
 #include "nfa.h"
 #include "dfa.h"
+#include "lexer.h"
 
 bool isEmpty(std::ifstream& pFile)
 {
@@ -262,4 +263,66 @@ DFA NFA::toDFA() {
 
     DFA dfa(this->alphabet, sStateInfo, sTransitionTable);
     return dfa;
+}
+
+
+
+void NFABuilder::addEdge(int src, int dst, char c) {
+    transitions[src][c] = dst;
+}
+void NFABuilder::addLambda(int src, int dst) {
+    lambdas[src].insert(dst);
+}
+int NFABuilder::addState() {
+    int lastState = nextState;
+    nextState++;
+    return lastState;
+}
+int NFABuilder::getAcceptingState() {
+    return acceptingState;
+}
+void NFABuilder::setAcceptingState(int acceptingState) {
+    this->acceptingState = acceptingState;
+}
+
+std::string NFABuilder::toGraphviz() {
+    std::ostringstream oss;
+
+    // print out the preamble
+    oss << "digraph \"\"" << std::endl;
+    oss << "{" << std::endl;
+    oss << "fontname=\"Monospace\"" << std::endl;
+    oss << "node [fontname=\"Monospace\"]" << std::endl;
+    oss << "edge [fontname=\"Monospace\"]" << std::endl;
+    oss << "rankdir=LR;" << std::endl;
+    oss << std::endl;
+
+    oss << "node [shape = doublecircle]; " << acceptingState << ";" << std::endl;
+    oss << "node [shape = circle];" << std::endl;
+    oss << std::endl;
+
+    // add transition edges
+    for (auto row : transitions) {
+        for (auto edge : row.second) {
+            char c = edge.first;
+            oss << row.first << " -> " << edge.second;
+            oss << " [label = \"";
+            if ((c > 'A' && c < 'Z') || (c > 'a' && c < 'z')) oss << c;
+            else oss << charToHex(c);
+            oss << "\"];" << std::endl;
+        }
+    }
+
+    // add lambda edges
+    for (auto row : lambdas) {
+        int from = row.first;
+        for (int to : row.second) {
+            oss << from << " -> " << to;
+            oss << " [label = \"&#955;\"];" << std::endl;
+        }
+    }
+
+    oss << "}" << std::endl;
+
+    return oss.str();
 }
