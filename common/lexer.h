@@ -30,3 +30,4 @@ std::vector<token> readTokenFile(std::string path);
 std::string readHexASCII(std::string str);
 std::string writeHexASCII(std::string str);
 std::string charToHex(char c);
+std::string charToHexIfNecessary(char c);

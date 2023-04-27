@@ -24,6 +24,7 @@ struct Definition {
 };
 
 Definition readDefinition(std::string filePath, bool skipHead=false);
+void writeDefinition(std::ostream& os, Definition& def);
 
 
 std::ostream& operator<<(std::ostream& os, const DefinitionHeader& def);
@@ -61,5 +62,6 @@ class NFABuilder {
         void addLambda(int src, int dst);
         int getAcceptingState();
         void setAcceptingState(int acceptingState);
+        Definition toDefinition(std::vector<char> alphabet);
         std::string toGraphviz();
 };

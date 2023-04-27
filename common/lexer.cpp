@@ -167,16 +167,19 @@ std::string charToHex(char c) {
     out << "x" << std::hex << msb << lsb;
     return out.str();
 }
+std::string charToHexIfNecessary(char c) {
+    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+        std::string s;
+        s.push_back(c);
+        return s;
+    }
+    else return charToHex(c);
+}
 std::string writeHexASCII(std::string str) {
     std::stringstream out;
     for (int i=0; i<str.size(); i++) {
         char c = str.at(i);
-        if ((c > 'A' && c < 'Z') || (c > 'a' && c < 'z')) {
-            out << c;
-        }
-        else {
-            
-        }
+        out << charToHexIfNecessary(c);
     }
     return out.str();
 }

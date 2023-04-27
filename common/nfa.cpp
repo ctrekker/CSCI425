@@ -91,6 +91,27 @@ Definition readDefinition(std::string filePath, bool skipHead) {
     return def;
 }
 
+void writeDefinition(std::ostream& os, Definition& def) {
+    // write head
+    os << def.head.stateCount << " " << def.head.lambda;
+    for (char c : def.head.alphabet) {
+        os << " " << charToHexIfNecessary(c);
+    }
+    os << std::endl;
+
+    // write lines
+    for (DefinitionLine line : def.lines) {
+        if (line.accepting) os << '+';
+        else os << '-';
+
+        os << " " << line.from << " " << line.to;
+        for (char c : line.transitionCharacters) {
+            os << " " << charToHexIfNecessary(c);
+        }
+        os << std::endl;
+    }
+}
+
 std::ostream& operator<<(std::ostream& os, const DefinitionHeader& def) {
     os << "stateCount: " << def.stateCount << std::endl;
     os << "lambda: " << def.lambda << std::endl;
@@ -285,6 +306,67 @@ void NFABuilder::setAcceptingState(int acceptingState) {
     this->acceptingState = acceptingState;
 }
 
+char _unusedCharacter(std::vector<char>& alphabet) {
+    std::unordered_set<char> alphabetSet;
+    for (char c : alphabet) alphabetSet.insert(c);
+    for (char c = 'Z'; c >= 'A'; c--) {
+        if (alphabetSet.find(c) == alphabetSet.end()) {
+            return c;
+        }
+    }
+    for (char c = 'z'; c >= 'a'; c--) {
+        if (alphabetSet.find(c) == alphabetSet.end()) {
+            return c;
+        }
+    }
+    std::cerr << "ERROR: no unused character found. How to represent lambda??" << std::endl;
+    return '?';  // question mark is just a last-ditch attempt to use an unlikely character :/
+}
+Definition NFABuilder::toDefinition(std::vector<char> alphabet) {
+    DefinitionHeader head;
+    head.alphabet = alphabet;
+    head.lambda = _unusedCharacter(alphabet);
+    head.stateCount = nextState;
+    
+    Definition def;
+    def.head = head;
+
+    // add transition edges
+    for (auto row: transitions) {
+        for (auto edge: row.second) {
+            char c = edge.first;
+            DefinitionLine line;
+            line.accepting = false;
+            line.from = row.first;
+            line.to = edge.second;
+            line.transitionCharacters.push_back(c);
+            def.lines.push_back(line);
+        }
+    }
+
+    // add lambda edges
+    for (auto row : lambdas) {
+        int from = row.first;
+        for (int to : row.second) {
+            DefinitionLine line;
+            line.accepting = false;
+            line.from = from;
+            line.to = to;
+            line.transitionCharacters.push_back(head.lambda);
+            def.lines.push_back(line);
+        }
+    }
+
+    // add accepting node statement
+    DefinitionLine acc;
+    acc.accepting = true;
+    acc.from = getAcceptingState();
+    acc.to = getAcceptingState();
+    def.lines.push_back(acc);
+
+    return def;
+}
+
 std::string NFABuilder::toGraphviz() {
     std::ostringstream oss;
 
@@ -306,10 +388,7 @@ std::string NFABuilder::toGraphviz() {
         for (auto edge : row.second) {
             char c = edge.first;
             oss << row.first << " -> " << edge.second;
-            oss << " [label = \"";
-            if ((c > 'A' && c < 'Z') || (c > 'a' && c < 'z')) oss << c;
-            else oss << charToHex(c);
-            oss << "\"];" << std::endl;
+            oss << " [label = \"" << charToHexIfNecessary(c) << "\"];" << std::endl;
         }
     }
 

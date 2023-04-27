@@ -97,33 +97,49 @@ int main(int argc, char** argv) {
     }
 
     std::string configFile = argv[1];
-    std::string defFile = argv[2];
+    std::string scanFile = argv[2];
+
+    std::map<int, std::string> rsmap = llre().getReverseSymbolMap();
 
     tokdefs def;
     try {
         def = readTokenConfig(configFile);
-        // for (toktable tab : def.tables) {
-        //     std::cout << "TOK: " << tab.token << "; REGEX: " << tab.regex << std::endl;
-        //     if (tab.data.size() > 0) std::cout << "\tDATA: " << tab.data << std::endl;
-
-        //     break;
-        // }
-
     } catch(int e) {
         return e;
     }
 
-    ParseTree result = parseRegex("(\\s|\\\\|b|c|d)*a");
-    // ParseTree result = parseRegex("a|b|c");
+    for (toktable tab : def.tables) {
+        std::cout << "TOK: " << tab.token << "; REGEX: " << tab.regex << std::endl;
+        if (tab.data.size() > 0) std::cout << "\tDATA: " << tab.data << std::endl;
+
+        ParseTree regexAst = parseRegex(tab.regex);
+        NFABuilder nfa = nfaRegex(regexAst, def.alphabet, rsmap);
+        Definition nfaDef = nfa.toDefinition(def.alphabet);
+        
+        std::ostringstream oss;
+        oss << tab.token << ".nfa";
+        std::ofstream defOutput(oss.str());
+        writeDefinition(defOutput, nfaDef);
+        defOutput.close();
+    }
+
+    // write output scan table file
+    std::ofstream scan(scanFile);
+    for (char c : def.alphabet) {
+        scan << charToHexIfNecessary(c);
+    }
+    scan << std::endl;
+    for (toktable table : def.tables) {
+        scan << table.token << ".tt " << table.token << " " << table.data << std::endl;
+    }
+    scan.close();
+    
+
+    // EXAMPLE USAGE
     // ParseTree result = parseRegex("Q-T(a.)*g+");
+    // llre().saveGraphvizTree("testplot.gv.txt", result);
 
-    llre().saveGraphvizTree("testplot.gv.txt", result);
-
-    std::map<int, std::string> rsmap = llre().getReverseSymbolMap();
-    NFABuilder nfa = nfaRegex(result, def.alphabet, rsmap);
-    std::ofstream nfaFile("nfa.gv.txt");
-    nfaFile << nfa.toGraphviz();
-    nfaFile.close();
+    
 
     return 0;
 }

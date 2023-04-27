@@ -254,7 +254,6 @@ _RegexToNFA::_RegexToNFA(ParseTree ast, std::vector<char> alphabet, std::map<int
 void _RegexToNFA::processChild(int node, int src, int dst) {
     int label = ast.getLabel(node);
     std::string strLabel = rsmap[label];
-    std::cout << strLabel << std::endl;
 
     if (strLabel == "RE") {
         processChild(ast.getChildren(node)->at(0), src, dst);
