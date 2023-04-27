@@ -261,7 +261,6 @@ std::set<int> CFG::followSet(const int x, std::set<int> visited) {
                 if (itr != rule.end()) {
                     std::vector<int> pi(rule.end() - itr);
                     copy(itr, rule.end(), pi.begin());
-                    std::cout << pi << std::endl;
                     std::set<int> first = firstSet(pi);
                     unionMutating(follow, first);
                 }
@@ -279,7 +278,6 @@ std::set<int> CFG::followSet(const int x, std::set<int> visited) {
                     }
                 }
                 if(allSubsequentLambdas && visited.find(rulePair.first) == visited.end()) {
-                    std::cout << x << ",SUBF: " << rulePair.first << std::endl;
                     std::set<int> subFollow = followSet(rulePair.first, visited);
                     unionMutating(follow, subFollow);
                 }
@@ -351,23 +349,12 @@ std::pair<bool, ParseTree> CFG::match(std::vector<token> tokenStream, std::map<s
     t.value = "";
     tokenStream.push_back(t);
 
-    GrammarRule g;
-    g.push_back(8);
-    std::cout << followSet(5) << std::endl;
-    std::cout << reverseSymbolMap << std::endl;
-    // throw 0;
-
     std::map<int, std::map<int, int>> ll1 = stateTableLL1();
 
     std::map<int, sdtcallback> encodedTranslations;
     for (std::pair<std::string, sdtcallback> translatePair : translations) {
         encodedTranslations[symbolMap[translatePair.first]] = translatePair.second;
     }
-
-
-    
-    // std::cout << derivesToLambda(3) << std::endl;
-    std::cout << ll1 << std::endl;
 
     ParseTree parseTree;
     int parseRoot = parseTree.addNode(-1, EMPTY_METADATA);
@@ -381,7 +368,7 @@ std::pair<bool, ParseTree> CFG::match(std::vector<token> tokenStream, std::map<s
         int s = derivationStack[derivationStack.size() - 1];
         derivationStack.pop_back();
 
-        std::cout << s << ":" << derivationStack << " <==> " << stackPos << std::endl;
+        // std::cout << s << ":" << derivationStack << " <==> " << stackPos << std::endl;
         // std::cout << "SYM: " << c << "S"
 
         if (s == -1) {

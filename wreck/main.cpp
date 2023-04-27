@@ -109,8 +109,8 @@ int main(int argc, char** argv) {
     }
 
     for (toktable tab : def.tables) {
-        std::cout << "TOK: " << tab.token << "; REGEX: " << tab.regex << std::endl;
-        if (tab.data.size() > 0) std::cout << "\tDATA: " << tab.data << std::endl;
+        // std::cout << "TOK: " << tab.token << "; REGEX: " << tab.regex << std::endl;
+        // if (tab.data.size() > 0) std::cout << "\tDATA: " << tab.data << std::endl;
 
         ParseTree regexAst = parseRegex(tab.regex);
         NFABuilder nfa = nfaRegex(regexAst, def.alphabet, rsmap);
